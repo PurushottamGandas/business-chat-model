@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios"; // Ensure you have axios installed for API requests
 import "./chats.scss";
 
 const Chats = () => {
@@ -7,18 +8,47 @@ const Chats = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
 
-    // Fetch messages every 5 seconds
+    // Fetch messages when a contact is selected
+    const fetchMessages = async (contactPhone) => {
+        try {
+            // Add headers to avoid caching
+            const response = await axios.get(`http://localhost:3000/messages/${contactPhone}`, {
+                headers: {
+                    "Cache-Control": "no-cache", // Prevent caching
+                    "Pragma": "no-cache",         // Prevent caching
+                    "Expires": "0"                // Prevent caching
+                }
+            });
+            setMessages(response.data.messages);
+        } catch (error) {
+            console.error("Error fetching messages", error);
+        }
+    };
 
     // Select a contact & load messages
     const handleSelectContact = (contact) => {
         setSelectedContact(contact);
+        fetchMessages(contact.phone); // Fetch messages when contact is selected
     };
 
     // Send a message
     const sendMessage = async () => {
-    };
+        if (!newMessage.trim()) return; // Don't send empty messages
 
-   
+        try {
+            // Send message to the backend
+            await axios.post("http://localhost:3000/send-whatsapp", {
+                to: selectedContact.phone,
+                message: newMessage,
+            });
+
+            // Add message to chat (client-side)
+            setMessages([...messages, { sender: "customer", text: newMessage }]);
+            setNewMessage(""); // Clear the input field
+        } catch (error) {
+            console.error("Error sending message", error);
+        }
+    };
 
     // Add new contact
     const addContact = () => {
@@ -33,7 +63,11 @@ const Chats = () => {
             <div className="contact-list">
                 <button onClick={addContact} className="add-contact">+</button>
                 {contacts.map((contact, index) => (
-                    <div key={index} className="contact-item" onClick={() => handleSelectContact(contact)}>
+                    <div
+                        key={index}
+                        className="contact-item"
+                        onClick={() => handleSelectContact(contact)}
+                    >
                         {contact.name}
                     </div>
                 ))}
@@ -45,14 +79,22 @@ const Chats = () => {
                     <div>
                         <h3>Chat with {selectedContact.name}</h3>
                         <div className="chat-box">
-                            {messages.map((msg, index) => (
-                                <div key={index} className={msg.sender === "agent" ? "agent-msg" : "customer-msg"}>
-                                    {msg.text}
+                            {messages?.map((msg, index) => (
+                                <div
+                                    key={index}
+                                    className={msg?.sender === "agent" ? "agent-msg" : "customer-msg"}
+                                >
+                                    {msg?.text}
                                 </div>
                             ))}
                         </div>
                         <div className="message-input">
-                            <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." />
+                            <input
+                                type="text"
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Type a message..."
+                            />
                             <button onClick={sendMessage}>Send</button>
                         </div>
                     </div>

@@ -3,6 +3,7 @@ const AWS = require("aws-sdk");
 const bodyParser = require("body-parser");
 const crypto = require("crypto");
 const cors = require("cors"); 
+const axios = require('axios');
 
 require("dotenv").config();
 
@@ -205,6 +206,46 @@ app.post("/reset-password", async (req, res) => {
       });
     }
   });
+});
+
+// WhatsApp API endpoint and token (you will get these from Meta)
+const whatsappApiUrl = 'https://graph.facebook.com/v15.0/541208282416959/messages'; // replace with your phone number ID
+const accessToken = process.env.WHATSAPP_ACCESS_TOKEN; // your access token
+
+// Route to send WhatsApp message to a participant
+app.post('/send-whatsapp', async (req, res) => {
+  const { to, message } = req.body; // to: participant's phone number, message: the text message
+
+  if (!to || !message) {
+    return res.status(400).json({ error: 'Recipient phone number and message are required' });
+  }
+
+  const data = {
+    messaging_product: 'whatsapp',
+    to: to, // recipient's phone number (in E.164 format)
+    text: { body: message }, // message content
+  };
+
+  try {
+    // Make the POST request to the WhatsApp API
+    const response = await axios.post(whatsappApiUrl, data, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return res.status(200).json({
+      message: 'Message sent successfully',
+      data: response.data,
+    });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    return res.status(500).json({
+      error: 'Failed to send message',
+      details: error.response ? error.response.data : error.message,
+    });
+  }
 });
 
 // Start the server
