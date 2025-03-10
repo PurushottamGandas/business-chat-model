@@ -1,27 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
+import { Box, Button, TextField, Typography } from '@mui/material';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  const [googleSignIn, setGoogleSignIn] = useState(false);  // State to track Google Sign-In
+  const [googleSignIn, setGoogleSignIn] = useState(false); // State to track Google Sign-In
   const navigate = useNavigate(); // Navigate to dashboard after sign-in
 
-  // Function to handle the Google Sign-In response
   const handleGoogleSignIn = async (response) => {
     if (response?.credential) {
       const token = response.credential;
 
       try {
-        // Send the Google token to your backend for verification
         const backendResponse = await fetch('http://localhost:3000/google-signin', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ token }), // Sending Google token to backend
+          body: JSON.stringify({ token }),
         });
 
         const result = await backendResponse.json();
@@ -61,7 +60,6 @@ const SignIn = () => {
       if (response.ok) {
         alert('Sign-in successful!');
         navigate('/dashboard');
-        console.log(result);
       } else {
         setErrorMessage(result.error || 'Error signing in');
       }
@@ -72,48 +70,90 @@ const SignIn = () => {
   };
 
   return (
-    <div>
-      <h2>Sign In</h2>
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      height="100vh"
+      bgcolor="#f5f5f5"
+    >
+      <Box
+        p={4}
+        bgcolor="#fff"
+        boxShadow={3}
+        borderRadius={4}
+        width="400px"
+        textAlign="center"
+      >
+        <Typography variant="h5" gutterBottom>
+          Sign In
+        </Typography>
 
-      {/* Conditionally render Google Sign-In button */}
-      {!googleSignIn ? (
-        <div>
-          <button onClick={() => setGoogleSignIn(true)}>Sign In with Google</button>
-          {errorMessage && <p>{errorMessage}</p>}
-        </div>
-      ) : (
-        <GoogleLogin
-          onSuccess={handleGoogleSignIn}  // Success callback
-          onError={() => setErrorMessage('Google Sign-In failed')}  // Error callback
-        />
-      )}
+        {!googleSignIn ? (
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={() => setGoogleSignIn(true)}
+          >
+            Sign In with Google
+          </Button>
+        ) : (
+          <GoogleLogin
+            onSuccess={handleGoogleSignIn}
+            onError={() => setErrorMessage('Google Sign-In failed')}
+          />
+        )}
 
-      <h3>OR</h3>
+        <Typography variant="body1" my={2}>
+          OR
+        </Typography>
 
-      {/* Email and Password Form */}
-      <form onSubmit={handleSignIn}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <br />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <br />
-        <button type="submit">Sign In</button>
-      </form>
+        <form onSubmit={handleSignIn}>
+          <TextField
+            type="email"
+            label="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            fullWidth
+            required
+            margin="normal"
+          />
+          <TextField
+            type="password"
+            label="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            fullWidth
+            required
+            margin="normal"
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 2 }}
+          >
+            Sign In
+          </Button>
+          <Button
+            variant="text"
+            fullWidth
+            onClick={() => navigate('/signup')}
+            sx={{ mt: 2 }}
+          >
+            Sign Up
+          </Button>
+        </form>
 
-      {/* Display error message */}
-      {errorMessage && <p>{errorMessage}</p>}
-    </div>
+        {errorMessage && (
+          <Typography color="error" mt={2}>
+            {errorMessage}
+          </Typography>
+        )}
+      </Box>
+    </Box>
   );
 };
 
